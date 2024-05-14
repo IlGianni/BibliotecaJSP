@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registra Utente</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        h2 {
+            color: #333366;
+        }
+
+        form {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"], input[type="email"], select, input[type="submit"] {
+            display: block;
+            width: 94%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        select {
+            width: 100%;
+        }
+
+        input[type="submit"] {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            width: 100%;
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h2>Registra nuovo Utente</h2>
+    <form action="addUser.jsp" method="post">
+        <fieldset>
+            <legend>Registrazione Utente</legend>
+            <label for="name">Nome:</label>
+            <input type="text" name="name" id="name" required>
+            <label for="surname">Cognome:</label>
+            <input type="text" name="surname" id="surname" required>
+            <label for="email">Email:</label>
+            <input type="email" name="email" id="email" required>
+            <label for="role">Ruolo:</label>
+            <select name="role" id="role">
+                <option value="student">Studente</option>
+                <option value="teacher">Docente</option>
+            </select>
+            <input type="submit" value="Registra">
+        </fieldset>
+    </form>
+
+    <a href="../index.jsp" style="position: fixed; top: 20px; right: 20px; background-color: #333366; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none;">Torna all'Index</a>
+</body>
+</html>

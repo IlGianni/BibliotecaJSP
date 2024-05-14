@@ -1,0 +1,62 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accedi al tuo account</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        h2 {
+            color: #333366;
+        }
+
+        form {
+            max-width: 300px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="email"], button {
+            display: block;
+            width: 94%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            width: 100%;
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h2>Accedi al tuo account</h2>
+    <form action="login.jsp" method="post">
+        <input type="email" name="email" placeholder="email" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <a href="../index.jsp" style="position: fixed; top: 20px; right: 20px; background-color: #333366; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none;">Torna all'Index</a>
+</body>
+</html>
